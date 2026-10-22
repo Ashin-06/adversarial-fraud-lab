@@ -3,6 +3,7 @@
     python -m advlab train                 # build defender models + attacker surrogate -> artifacts/
     python -m advlab attack --index 3      # walk one attack step by step against each model
     python -m advlab evaluate [--quick]    # full benchmark -> results/
+    python -m advlab realdata --data creditcard.pq   # attacks on real card fraud -> results/real_data.json
 """
 from __future__ import annotations
 
@@ -40,6 +41,9 @@ def main(argv=None):
     e.add_argument("--quick", action="store_true")
     e.add_argument("--attacks", type=int, default=120)
     e.add_argument("--out", default="results")
+    r = sub.add_parser("realdata", help="evasion on the real ULB card-fraud data")
+    r.add_argument("--data", required=True, help="OpenML #1597 parquet or Kaggle creditcard.csv")
+    r.add_argument("--out", default="results/real_data.json")
     args = ap.parse_args(argv)
 
     if args.cmd == "train":
@@ -64,6 +68,12 @@ def main(argv=None):
             tr = transfer(m, sur, orig, threat)
             _, stolen = profit(m, sur, orig, threat)
             print(f"   transfer attack: {'EVADED' if tr.success else 'caught'};  profit-seeking attacker gets ₹{stolen:,.0f} of ₹{orig['amount']:,.0f}")
+    elif args.cmd == "realdata":
+        import json
+
+        from .realdata import main as realdata
+
+        print(json.dumps(realdata(args.data, args.out), indent=2))
     else:
         evaluate(args.out, args.attacks, quick=args.quick)
 

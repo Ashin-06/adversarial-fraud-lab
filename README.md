@@ -40,19 +40,36 @@ Everything about the **victim's profile is immutable**: account age, usual spend
 
 | Model | PR-AUC | Recall @ 1% FPR | Black-box evasion | Evasion with 5-attempt lockout | Transfer evasion | Money stolen / attempted | Attacker effort |
 |---|---|---|---|---|---|---|---|
-| baseline | 0.999 | 1.000 | 100% (median 85 tries) | 1% | 43% | 41% | 1.4 |
-| monotone | 0.999 | 1.000 | 100% (median 92 tries) | 1% | 47% | 41% | 1.2 |
-| adversarially trained | 0.991 | 0.992 | 82% (median 83 tries) | 1% | **2%** | **8%** | **2.8** |
+| baseline | 0.999 | 1.000 | 100% (median 88 tries) | 1% | 43% | 42% | 1.4 |
+| monotone | 0.999 | 1.000 | 100% (median 89 tries) | 0% | 50% | 43% | 1.1 |
+| adversarially trained | 0.989 | 0.992 | 90% (median 95 tries) | 1% | **1%** | **14%** | **2.8** |
 
 What this shows:
 
 1. **A near-perfect clean model is not a secure one.** The baseline catches every fraud at a 1% false-positive rate, yet an attacker with unlimited tries beats it every time.
-2. **Lockout is the cheapest, strongest control against probing.** Evasion needs about 85 attempts; after 5 declines the card is frozen, and success falls to 1%. Rate limits and lockouts belong in the fraud-ML threat model.
+2. **Lockout is the cheapest, strongest control against probing.** Evasion needs about 88 attempts; after 5 declines the card is frozen, and success falls to 1%. Rate limits and lockouts belong in the fraud-ML threat model.
 3. **The realistic attacker never probes.** They train their own model and try once. Against the baseline that works 43% of the time.
-4. **Adversarial training is what stops them.** Offline evasion falls from 43% to 2%, stolen value from 41% to 8%, and the effort an attacker must spend doubles. It costs 0.008 PR-AUC on clean data.
+4. **Adversarial training is what stops them.** Offline evasion falls from 43% to 1%, stolen value from 42% to 14%, and the effort an attacker must spend doubles. It costs 0.010 PR-AUC on clean data.
 5. **Monotone constraints alone did not help here.** Their value is that the model can be reasoned about and audited, not robustness. Stated plainly because it is the honest result.
 
 The data is synthetic, so treat the numbers as a relative comparison between defences. The method transfers directly to a real model: plug it into `Scorer` and define the threat model for your channel.
+
+## On real card fraud
+
+`python -m advlab realdata --data creditcard.pq` repeats the attacks on the [ULB / Worldline card-fraud data](https://api.openml.org/d/1597): 284,807 real European card transactions, 492 frauds, 98 of them in the test split. Results are in `results/real_data.json`.
+
+There, 28 of the 30 fields are anonymised PCA components. Nobody, attacker or bank, knows which real-world action moves them, so the threat model is narrower. The attacker can only change the **amount** (down to €1) and the **time of day**; everything else stays fixed.
+
+| Model (decline at 1% FPR) | PR-AUC | Recall | Black-box evasion | With 5-try lockout | Transfer evasion | Value stolen |
+|---|---|---|---|---|---|---|
+| Baseline XGBoost | 0.838 | 88% | 3.5% (median 14 tries) | 1.2% | 1.2% | 3.3% |
+| Adversarially trained | 0.838 | 88% | 3.5% | 1.2% | 1.2% | 3.3% |
+| **Context-only** (amount and time removed) | 0.825 | 87% | **0%** | **0%** | **0%** | **0%** |
+
+What the real data adds:
+- **With only amount and timing to play with, evasion is rare**, because the anonymised behaviour components carry most of the signal. It isn't zero, though: a few frauds pass after about 14 tries.
+- **Adversarial training had nothing to learn here.** None of the 246 training frauds could be pushed under the threshold, so no examples were added and the model is unchanged.
+- **The robust fix is to not depend on attacker-controlled fields.** Dropping amount and time costs 0.013 PR-AUC and removes this attack surface entirely. Weigh that trade in your own setting, where the attacker usually controls more than two fields.
 
 ## Run it
 
@@ -62,6 +79,7 @@ python -m pytest -q                 # 5 tests
 python -m advlab train              # defender models + attacker surrogate -> artifacts/
 python -m advlab attack --index 3   # step-by-step attack on one transaction, every model
 python -m advlab evaluate [--quick] # full benchmark -> results/
+python -m advlab realdata --data creditcard.pq   # the attacks on real card fraud
 streamlit run app.py                # attack studio
 ```
 
