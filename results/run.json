@@ -1,0 +1,26 @@
+{
+  "seed": 0,
+  "threat_model": {
+    "min_amount": 2000.0,
+    "budget": 4.0,
+    "costs": {
+      "new_device": 2.0,
+      "ip_country_mismatch": 0.5,
+      "ship_bill_match": 1.5,
+      "email_age_days": 1.5,
+      "pacing": 0.5
+    },
+    "mutable": [
+      "amount",
+      "hour",
+      "mcc",
+      "velocity_1h",
+      "secs_since_last",
+      "new_device",
+      "ip_country_mismatch",
+      "ship_bill_match",
+      "email_age_days"
+    ]
+  },
+  "seconds": 718.0
+}
