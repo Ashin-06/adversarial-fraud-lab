@@ -9,6 +9,7 @@ profit     The economic attacker: try amounts from high to low and keep the high
 """
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -34,7 +35,7 @@ def greedy(scorer: Scorer, orig: pd.Series, threat: ThreatModel, max_queries: in
     s = float(scorer.score_raw(cur.to_frame().T)[0])
     queries, path = 1, [("start", None, s)]
     while s >= scorer.threshold and queries < max_queries:
-        moves = threat.candidates(orig, cur)
+        moves = threat.candidates(orig, cur)[: max_queries - queries]  # every probe counts against the limit
         if not moves:
             break
         cands = pd.DataFrame([_with(cur, k, v) for k, v in moves])
@@ -52,7 +53,8 @@ def greedy(scorer: Scorer, orig: pd.Series, threat: ThreatModel, max_queries: in
 
 def transfer(target: Scorer, surrogate: Scorer, orig: pd.Series, threat: ThreatModel) -> AttackResult:
     """Craft against the surrogate with a safety margin, then one real attempt."""
-    margin = Scorer(surrogate.name, surrogate.model, surrogate.threshold * 0.5)
+    margin = copy.copy(surrogate)  # keep the surrogate's own scoring (subclasses featurize differently)
+    margin.threshold = surrogate.threshold * 0.5
     r = greedy(margin, orig, threat, max_queries=2000)
     s = float(target.score_raw(r.adv.to_frame().T)[0])
     return AttackResult(s < target.threshold and threat.valid(orig, r.adv), r.adv, s, 1, r.cost, r.path)
