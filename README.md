@@ -43,13 +43,32 @@ streamlit run app.py                # attack studio
 
 In the attack studio you pick a stolen-card transaction, set the attacker's budget, switch the lockout on or off and watch each model's fraud score fall step by step.
 
+## Scoring API
+
+`python -m advlab serve` (or the container image, `docker build -t adversarial-fraud-lab .`, see [docs/runbook.md](docs/runbook.md)) returns approve or decline decisions from the adversarially trained model at its 1% false-positive threshold, and logs each decision.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /v1/score` | up to 500 raw transactions (amount, hour, merchant type, device and account fields) |
+| `GET /v1/decisions`, `/v1/model` | the decision log and the loaded model |
+| `GET /healthz`, `/readyz`, `/metrics` | health, readiness and Prometheus metrics |
+
+The model bundle is a pickle, so with `ADVLAB_MODEL_KEY` set `train` writes an HMAC signature next to it, and in production the API only loads a correctly signed bundle. API keys carry a role: `scorer`, `viewer`, `analyst`, `monitor`. Create one with `python -m advlab.ops keygen`. The API does not lock cards: put the 5-decline lockout in the payment flow in front of it.
+
+| Variable | Purpose |
+|---|---|
+| `ADVLAB_ENV=production` | refuse to start without hashed API keys, a database, the model key and a signed bundle |
+| `ADVLAB_MODEL_PATH`, `ADVLAB_MODEL_KEY` | the signed bundle from `train` and its key |
+| `ADVLAB_API_KEYS` / `ADVLAB_KEYS_FILE` | hashed API keys with roles |
+| `ADVLAB_DATABASE_URL` | the decision log: `sqlite:///...` or `postgresql://...` |
+
 ## Results
 
 | Test | Result |
 |---|---|
-| Simulated data, unlimited probing | every model is beaten (90–100%), after about 88 tries |
-| Simulated data, with a 5-decline lockout | evasion drops to 0–1% |
-| Simulated data, offline transfer attack | 43% evade the baseline, 1% the adversarially trained model |
+| Simulated data, unlimited probing | every model is beaten (90–100%), after 84–95 tries |
+| Simulated data, with a 5-decline lockout | evasion drops to 0–2% |
+| Simulated data, offline transfer attack | 42% evade the baseline, 2% the adversarially trained model |
 | Real card fraud (ULB), amount and time only | 3.5% evade with probing, 1.2% with lockout; 0% for a model that ignores those two fields |
 
 Full tables and an example attack trace are in [docs/evaluation.md](docs/evaluation.md).
@@ -77,6 +96,9 @@ advlab/
   attacks.py   probing, transfer and profit-seeking attacks
   defenses.py  monotone model, adversarial training, lockout
   evaluate.py  benchmark and report
+  api.py       scoring API with a decision log
+  signing.py   model bundle signatures
+  ops.py       settings, API keys, limits, logs, metrics
 app.py         Streamlit attack studio
 ```
 
@@ -84,4 +106,10 @@ app.py         Streamlit attack studio
 
 - The main benchmark uses simulated transactions, so its numbers compare defences rather than predict real rates.
 - In the real dataset most fields are anonymised, so only amount and time could be attacked; real attackers usually control more.
-- There is no API service yet; it runs as a CLI and a dashboard.
+- The code has not had an independent security review.
+
+See [SECURITY.md](SECURITY.md), [docs/threat-model.md](docs/threat-model.md) and [docs/model-card.md](docs/model-card.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

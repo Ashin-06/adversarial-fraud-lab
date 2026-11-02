@@ -8,17 +8,17 @@
 
 | Model | PR-AUC | Recall at 1% FPR | Black-box evasion | With 5-attempt lockout | Transfer evasion | Money stolen / attempted | Attacker effort |
 |---|---|---|---|---|---|---|---|
-| Baseline | 0.999 | 1.000 | 100% (median 88 tries) | 1% | 43% | 42% | 1.4 |
-| Monotone | 0.999 | 1.000 | 100% (median 89 tries) | 0% | 50% | 43% | 1.1 |
-| Adversarially trained | 0.989 | 0.992 | 90% (median 95 tries) | 1% | 1% | 14% | 2.8 |
+| Baseline | 0.999 | 1.000 | 100% (median 84 tries) | 2% | 42% | 40% | 1.4 |
+| Monotone | 0.999 | 1.000 | 100% (median 95 tries) | 0% | 50% | 41% | 1.1 |
+| Adversarially trained | 0.990 | 0.988 | 90% (median 85 tries) | 1% | 2% | 12% | 2.7 |
 
 - A model that is nearly perfect on clean data can still be beaten: with unlimited tries, an attacker gets past the baseline every time.
-- Freezing the card after 5 declines is the cheapest and strongest control against probing, because evasion needs about 88 attempts.
-- A realistic attacker trains their own model and tries once. Against the baseline that works 43% of the time.
-- Adversarial training cuts that to 1% and the money stolen from 42% to 14%, for a 0.010 drop in clean PR-AUC.
+- Freezing the card after 5 declines is the cheapest and strongest control against probing, because evasion needs 84–95 attempts.
+- A realistic attacker trains their own model and tries once. Against the baseline that works 42% of the time.
+- Adversarial training cuts that to 2% and the money stolen from 40% to 12%, for a 0.009 drop in clean PR-AUC.
 - Monotone constraints didn't improve robustness here; their value is that the model is easier to reason about and audit.
 
-The data is synthetic, so read these as a comparison between defences rather than absolute rates.
+The data is synthetic, so read these as a comparison between defences rather than absolute rates. These numbers are from a re-run on the pinned dependencies (xgboost 3.4, torch 2.15); the first run, on older versions, gave the same picture with slightly different values (for example 43% and 1% transfer evasion). The example trace below is from that first run.
 
 Example from `python -m advlab attack --index 3`, a ₹3,876 travel purchase on a new device through a foreign IP:
 
