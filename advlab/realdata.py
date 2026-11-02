@@ -112,7 +112,9 @@ def run(path: str | Path, seed: int = 0, log=print) -> dict:
     rest, test = train_test_split(idx, test_size=0.2, stratify=y, random_state=seed)
     train, other = train_test_split(rest, test_size=0.375, stratify=y[rest], random_state=seed)   # 50% / 30% of all
     calib, attacker = train_test_split(other, test_size=2 / 3, stratify=y[other], random_state=seed)  # 10% / 20%
-    part = lambda ix: (raw.iloc[ix].reset_index(drop=True), y[ix])
+    def part(ix):
+        return raw.iloc[ix].reset_index(drop=True), y[ix]
+
     (tr_raw, tr_y), cal, (te_raw, te_y), (at_raw, at_y) = part(train), part(calib), part(test), part(attacker)
     threat = AmountTimeThreat()
 
