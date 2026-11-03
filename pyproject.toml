@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "adversarial-fraud-lab"
-version = "1.0.0"
+version = "1.0.1"
 description = "Evasion attacks on fraud models, adversarially trained defenders and a scoring API"
 readme = "README.md"
 requires-python = ">=3.12"

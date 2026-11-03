@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## 1.0.1 — 2026-11-03
+
+### Fixed
+- The container image gives matplotlib a writable cache directory (`MPLCONFIGDIR`); the non-root user
+  has no home directory, so matplotlib printed plain-text warnings at start-up.
+
 ## 1.0.0 — 2026-11-02
 
 ### Added

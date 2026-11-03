@@ -5,6 +5,8 @@ COPY requirements.lock /tmp/
 RUN python -m venv /opt/venv && /opt/venv/bin/pip install -r /tmp/requirements.lock
 
 FROM python:3.12-slim-bookworm
+# the app user has no home directory; give matplotlib a writable cache
+ENV MPLCONFIGDIR=/tmp/matplotlib
 ENV PATH=/opt/venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     ADVLAB_ENV=production ADVLAB_HOST=0.0.0.0 ADVLAB_PORT=8005 \
     ADVLAB_DATABASE_URL=sqlite:////data/advlab.db ADVLAB_MODEL_PATH=/models/lab.joblib
