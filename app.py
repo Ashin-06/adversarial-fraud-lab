@@ -65,7 +65,7 @@ with tab_attack:
             fig.add_hline(y=m.threshold, line_dash="dot", annotation_text="decline above")
             fig.update_layout(height=260, margin=dict(t=10, b=10), xaxis_title="step", yaxis_title="fraud score")
             st.plotly_chart(fig, width="stretch", key=f"p{m.name}")
-            steps = pd.DataFrame([{"change": f, "to": v, "score": round(s, 3)} for f, v, s in r.path[1:]])
+            steps = pd.DataFrame([{"change": f, "to": str(v), "score": round(s, 3)} for f, v, s in r.path[1:]])
             if len(steps):
                 st.dataframe(steps, hide_index=True, width="stretch")
     st.markdown("**Original transaction**")
