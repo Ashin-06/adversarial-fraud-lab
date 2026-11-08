@@ -33,7 +33,7 @@ Features are always recomputed from the raw fields, so every attack transaction 
 ## Quick start
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt   # on macOS, first: brew install libomp
 python -m pytest -q
 python -m advlab train              # defender models and the attacker's surrogate
 python -m advlab attack --index 3   # step-by-step attack on one transaction
